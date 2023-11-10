@@ -34,7 +34,7 @@ Download alignment **ModelNet** [here](https://shapenet.cs.stanford.edu/media/mo
 
 ### Run
 ```shell
-python train_cls.py --log_dir [your log dir]
+python train_classification_MCGConv_tb.py --log_dir [your log dir]
 ```
 
 ## Part Segmentation
@@ -42,7 +42,7 @@ python train_cls.py --log_dir [your log dir]
 Download alignment **ShapeNet** [here](https://shapenet.cs.stanford.edu/media/shapenetcore_partanno_segmentation_benchmark_v0_normal.zip)  and save in `data/shapenetcore_partanno_segmentation_benchmark_v0_normal/`.
 ### Run
 ```shell
-python train_partseg.py --normal --log_dir [your log dir]
+python train_partseg_MCGConv_tb.py --normal --log_dir [your log dir]
 ```
 
 ## Semantic Segmentation

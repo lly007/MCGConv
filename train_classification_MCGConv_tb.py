@@ -15,8 +15,8 @@ import importlib
 import shutil
 import argparse
 import pandas as pd
-from torchinfo import summary
-from torch.utils.tensorboard import SummaryWriter
+# from torchinfo import summary
+# from torch.utils.tensorboard import SummaryWriter
 
 from pathlib import Path
 from tqdm import tqdm
@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument('--use_cpu', action='store_true', default=False, help='use cpu mode')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device')
     parser.add_argument('--batch_size', type=int, default=16, help='batch size in training')
-    parser.add_argument('--model', default='FMRCNN_cls', help='model name [default: pointnet_cls]')
+    parser.add_argument('--model', default='MCGCNN_cls', help='model name [default: pointnet_cls]')
     parser.add_argument('--num_category', default=40, type=int, choices=[10, 40],  help='training on ModelNet10/40')
     parser.add_argument('--epoch', default=400, type=int, help='number of epoch in training')
     parser.add_argument('--learning_rate', default=0.001, type=float, help='learning rate in training')
@@ -135,7 +135,7 @@ def main(args):
     loss_logger.addHandler(loss_file_handler)
 
     '''Tensorboard'''    
-    writer = SummaryWriter(log_dir=log_dir, comment=args.model, flush_secs=60, filename_suffix='tb')
+    # writer = SummaryWriter(log_dir=log_dir, comment=args.model, flush_secs=60, filename_suffix='tb')
     
     '''DATA LOADING'''
     log_string('Load dataset ...')
@@ -189,14 +189,14 @@ def main(args):
     best_class_acc = 0.0
 
 
-    summary(classifier, input_size=(args.batch_size, 6, 1024))
+    # summary(classifier, input_size=(args.batch_size, 6, 1024))
 
     '''TRANING'''
     logger.info('Start training...')
     for epoch in range(start_epoch, args.epoch):
         lr = optimizer.state_dict()['param_groups'][0]['lr']
         log_string('Epoch %d (%d/%s), Learning Rate %f:' % (global_epoch + 1, epoch + 1, args.epoch, lr))
-        writer.add_scalar('Learning Rate', lr, epoch)
+        # writer.add_scalar('Learning Rate', lr, epoch)
 
         mean_correct = []
         epoch_loss = []
@@ -235,8 +235,8 @@ def main(args):
 
         train_instance_acc = np.mean(mean_correct)
         log_string('Train Instance Accuracy: %f, Train Loss: %f' % (train_instance_acc, loss_in_epoch))
-        writer.add_scalars('Loss', {"Train": loss_in_epoch}, epoch)
-        writer.add_scalars('Accuracy', {"Train": train_instance_acc}, epoch)
+        # writer.add_scalars('Loss', {"Train": loss_in_epoch}, epoch)
+        # writer.add_scalars('Accuracy', {"Train": train_instance_acc}, epoch)
 
         with torch.no_grad():
             instance_acc, class_acc, test_loss_in_epoch = test(classifier.eval(), criterion.eval(), testDataLoader, num_class=num_class)
@@ -250,8 +250,8 @@ def main(args):
             log_string('Test Instance Accuracy: %f, Class Accuracy: %f, Test Loss: %f' % (instance_acc, class_acc, test_loss_in_epoch))
             log_string('Best Instance Accuracy: %f, Class Accuracy: %f' % (best_instance_acc, best_class_acc))
 
-            writer.add_scalars('Loss', {"Test": test_loss_in_epoch}, epoch)
-            writer.add_scalars('Accuracy', {"Test": instance_acc}, epoch)
+            # writer.add_scalars('Loss', {"Test": test_loss_in_epoch}, epoch)
+            # writer.add_scalars('Accuracy', {"Test": instance_acc}, epoch)
 
             if (instance_acc >= best_instance_acc):
                 logger.info('Save model...')
@@ -267,7 +267,7 @@ def main(args):
                 torch.save(state, savepath)
             global_epoch += 1
 
-    writer.close()
+    # writer.close()
     logger.info('End of training...')
 
 

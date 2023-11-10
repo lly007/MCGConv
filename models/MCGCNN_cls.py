@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pointnet2_utils import PointNetSetAbstraction
-from FMRConv_PyTorch3d import FMRConv
+from MCGConv_PyTorch3d import MCGConv
 
 
 class get_model(nn.Module):
@@ -11,11 +11,11 @@ class get_model(nn.Module):
         in_channel = 6 if normal_channel else 3
         self.normal_channel = normal_channel
         framepoint = torch.tensor([[1.0,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1],[0,0,0]]).cuda()
-        self.fmrconv1 = FMRConv(npoint=512, cin=3, cout=128, radius=0.15, nsample=32, m1=[7,32,1], m2=[1,64,128], framepoints=framepoint, ball_query=False)
-        self.fmrconv2 = FMRConv(npoint=256, cin=128, cout=256, radius=0.25, nsample=32, m1=[7,32,1], m2=[1,64,256], framepoints=framepoint, ball_query=False)
-        self.fmrconv3 = FMRConv(npoint=128, cin=256, cout=256, radius=0.4, nsample=32, m1=[7,64,1], m2=[1,128,256], framepoints=framepoint, ball_query=False)
-        self.fmrconv4 = FMRConv(npoint=32, cin=256, cout=512, radius=0.6, nsample=32, m1=[7,64,1], m2=[1,128,512], framepoints=framepoint, ball_query=False)
-        self.fmrconv5 = FMRConv(npoint=None, cin=512, cout=1024, radius=10, nsample=32, m1=[7,128,1], m2=[1,256,1024], framepoints=framepoint, ball_query=False)
+        self.fmrconv1 = MCGConv(npoint=512, cin=3, cout=128, radius=0.15, nsample=32, m1=[7,32,1], m2=[1,64,128], framepoints=framepoint, ball_query=False)
+        self.fmrconv2 = MCGConv(npoint=256, cin=128, cout=256, radius=0.25, nsample=32, m1=[7,32,1], m2=[1,64,256], framepoints=framepoint, ball_query=False)
+        self.fmrconv3 = MCGConv(npoint=128, cin=256, cout=256, radius=0.4, nsample=32, m1=[7,64,1], m2=[1,128,256], framepoints=framepoint, ball_query=False)
+        self.fmrconv4 = MCGConv(npoint=32, cin=256, cout=512, radius=0.6, nsample=32, m1=[7,64,1], m2=[1,128,512], framepoints=framepoint, ball_query=False)
+        self.fmrconv5 = MCGConv(npoint=None, cin=512, cout=1024, radius=10, nsample=32, m1=[7,128,1], m2=[1,256,1024], framepoints=framepoint, ball_query=False)
         self.fc1 = nn.Linear(1024, 512)
         self.bn1 = nn.BatchNorm1d(512)
         self.drop1 = nn.Dropout(0.4)

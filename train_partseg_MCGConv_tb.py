@@ -48,7 +48,7 @@ def to_categorical(y, num_classes):
 
 def parse_args():
     parser = argparse.ArgumentParser('Model')
-    parser.add_argument('--model', type=str, default='FMRCNN_part', help='model name')
+    parser.add_argument('--model', type=str, default='MCGCNN_part', help='model name')
     parser.add_argument('--batch_size', type=int, default=16, help='batch Size during training')
     parser.add_argument('--epoch', default=600, type=int, help='epoch to run')
     parser.add_argument('--learning_rate', default=0.001, type=float, help='initial learning rate')

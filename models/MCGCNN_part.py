@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from models.pointnet2_utils import PointNetSetAbstraction,PointNetFeaturePropagation
-from FMRConv_PyTorch3d import FMRConv
+from MCGConv_PyTorch3d import MCGConv
 
 
 class get_model(nn.Module):
@@ -14,12 +14,12 @@ class get_model(nn.Module):
             additional_channel = 0
         self.normal_channel = normal_channel
         framepoint = torch.tensor([[1.0,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1],[0,0,0]]).cuda()
-        self.fmrconv1 = FMRConv(npoint=1024, cin=6, cout=64, radius=0.15, nsample=32, m1=[7,16,1], m2=[1,16,64], framepoints=framepoint, ball_query=False)
-        self.fmrconv2 = FMRConv(npoint=512, cin=64, cout=128, radius=0.15, nsample=32, m1=[7,32,1], m2=[1,64,128], framepoints=framepoint, ball_query=False)
-        self.fmrconv3 = FMRConv(npoint=256, cin=128, cout=256, radius=0.25, nsample=16, m1=[7,32,1], m2=[1,64,256], framepoints=framepoint, ball_query=False)
-        self.fmrconv4 = FMRConv(npoint=128, cin=256, cout=256, radius=0.4, nsample=16, m1=[7,64,1], m2=[1,128,256], framepoints=framepoint, ball_query=False)
-        self.fmrconv5 = FMRConv(npoint=32, cin=256, cout=512, radius=0.6, nsample=8, m1=[7,64,1], m2=[1,128,512], framepoints=framepoint, ball_query=False)
-        self.fmrconv6 = FMRConv(npoint=None, cin=512, cout=1024, radius=10, nsample=32, m1=[7,128,1], m2=[1,256,1024], framepoints=framepoint, ball_query=False)
+        self.fmrconv1 = MCGConv(npoint=1024, cin=6, cout=64, radius=0.15, nsample=32, m1=[7,16,1], m2=[1,16,64], framepoints=framepoint, ball_query=False)
+        self.fmrconv2 = MCGConv(npoint=512, cin=64, cout=128, radius=0.15, nsample=32, m1=[7,32,1], m2=[1,64,128], framepoints=framepoint, ball_query=False)
+        self.fmrconv3 = MCGConv(npoint=256, cin=128, cout=256, radius=0.25, nsample=16, m1=[7,32,1], m2=[1,64,256], framepoints=framepoint, ball_query=False)
+        self.fmrconv4 = MCGConv(npoint=128, cin=256, cout=256, radius=0.4, nsample=16, m1=[7,64,1], m2=[1,128,256], framepoints=framepoint, ball_query=False)
+        self.fmrconv5 = MCGConv(npoint=32, cin=256, cout=512, radius=0.6, nsample=8, m1=[7,64,1], m2=[1,128,512], framepoints=framepoint, ball_query=False)
+        self.fmrconv6 = MCGConv(npoint=None, cin=512, cout=1024, radius=10, nsample=32, m1=[7,128,1], m2=[1,256,1024], framepoints=framepoint, ball_query=False)
         
         self.fp6 = PointNetFeaturePropagation(in_channel=1536, mlp=[512, 512])
         self.fp5 = PointNetFeaturePropagation(in_channel=768, mlp=[256, 256])

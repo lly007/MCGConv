@@ -10,9 +10,9 @@ from pytorch3d.ops.utils import masked_gather
 from pytorch3d.transforms import RotateAxisAngle
 
 
-class FMRConv(Module):
+class MCGConv(Module):
     def __init__(self, npoint, cin, cout, radius, nsample, m1, m2, framepoints, ball_query=True):
-        super(FMRConv, self).__init__()
+        super(MCGConv, self).__init__()
         self.device = framepoints.device
         self.npoint = npoint
         self.cin = cin + 3 + 3
