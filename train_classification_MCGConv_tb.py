@@ -15,8 +15,8 @@ import importlib
 import shutil
 import argparse
 import pandas as pd
-# from torchinfo import summary
-# from torch.utils.tensorboard import SummaryWriter
+from torchinfo import summary
+from tensorboardX import SummaryWriter
 
 from pathlib import Path
 from tqdm import tqdm
@@ -32,7 +32,7 @@ def parse_args():
     parser = argparse.ArgumentParser('training')
     parser.add_argument('--use_cpu', action='store_true', default=False, help='use cpu mode')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device')
-    parser.add_argument('--batch_size', type=int, default=16, help='batch size in training')
+    parser.add_argument('--batch_size', type=int, default=4, help='batch size in training')
     parser.add_argument('--model', default='MCGCNN_cls', help='model name [default: pointnet_cls]')
     parser.add_argument('--num_category', default=40, type=int, choices=[10, 40],  help='training on ModelNet10/40')
     parser.add_argument('--epoch', default=400, type=int, help='number of epoch in training')
@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('--optimizer', type=str, default='AdamW', help='optimizer for training')
     parser.add_argument('--log_dir', type=str, default=None, help='experiment root')
     parser.add_argument('--decay_rate', type=float, default=1e-4, help='decay rate')
-    parser.add_argument('--use_normals', action='store_true', default=False, help='use normals')
+    parser.add_argument('--use_normals', action='store_true', default=True, help='use normals')
     parser.add_argument('--process_data', action='store_true', default=False, help='save data offline')
     parser.add_argument('--use_uniform_sample', action='store_true', default=False, help='use uniform sampiling')
     return parser.parse_args()
@@ -66,9 +66,16 @@ def test(model, criterion, loader, num_class=40):
             points, target = points.cuda(), target.cuda()
 
         points = points.transpose(2, 1)
+
+        # with torch.autocast(device_type="cuda"):
+        #     pred, trans_feat = classifier(points)
+        #     pred_choice = pred.data.max(1)[1]
+        #     loss = criterion(pred, target.long(), trans_feat)
+
         pred, trans_feat = classifier(points)
         pred_choice = pred.data.max(1)[1]
         loss = criterion(pred, target.long(), trans_feat)
+
         test_epoch_loss.append(loss.cpu().detach().numpy())
 
         for cat in np.unique(target.cpu()):
@@ -135,7 +142,7 @@ def main(args):
     loss_logger.addHandler(loss_file_handler)
 
     '''Tensorboard'''    
-    # writer = SummaryWriter(log_dir=log_dir, comment=args.model, flush_secs=60, filename_suffix='tb')
+    writer = SummaryWriter(log_dir=log_dir, comment=args.model, flush_secs=60, filename_suffix='tb')
     
     '''DATA LOADING'''
     log_string('Load dataset ...')
@@ -151,7 +158,7 @@ def main(args):
     model = importlib.import_module(args.model)
     shutil.copy('./models/%s.py' % args.model, str(exp_dir))
     shutil.copy('models/pointnet2_utils.py', str(exp_dir))
-    shutil.copy('./train_classification_FMRC.py', str(exp_dir))
+    shutil.copy('./train_classification_MCGConv_tb.py', str(exp_dir))
 
     classifier = model.get_model(num_class, normal_channel=args.use_normals)
     criterion = model.get_loss()
@@ -188,15 +195,15 @@ def main(args):
     best_instance_acc = 0.0
     best_class_acc = 0.0
 
-
-    # summary(classifier, input_size=(args.batch_size, 6, 1024))
+    scaler = torch.cuda.amp.GradScaler()
+    summary(classifier, input_size=(args.batch_size, 6, 1024))
 
     '''TRANING'''
     logger.info('Start training...')
     for epoch in range(start_epoch, args.epoch):
         lr = optimizer.state_dict()['param_groups'][0]['lr']
         log_string('Epoch %d (%d/%s), Learning Rate %f:' % (global_epoch + 1, epoch + 1, args.epoch, lr))
-        # writer.add_scalar('Learning Rate', lr, epoch)
+        writer.add_scalar('Learning Rate', lr, epoch)
 
         mean_correct = []
         epoch_loss = []
@@ -217,14 +224,24 @@ def main(args):
             if not args.use_cpu:
                 points, target = points.cuda(), target.cuda()
 
-            pred, trans_feat = classifier(points)
+            # with torch.autocast(device_type="cuda"):
+            #     pred, trans_feat = classifier(points)
+            #     loss = criterion(pred, target.long(), trans_feat)
 
+            pred, trans_feat = classifier(points)
             loss = criterion(pred, target.long(), trans_feat)
+
             epoch_loss.append(loss.cpu().detach().numpy())
 
             pred_choice = pred.data.max(1)[1]
             correct = pred_choice.eq(target.long().data).cpu().sum()
             mean_correct.append(correct.item() / float(points.size()[0]))
+            # AMP训练
+            # scaler.scale(loss).backward()
+            # scaler.step(optimizer)
+            # scaler.update()
+
+            # 没有AMP的情况
             loss.backward()
             optimizer.step()
             global_step += 1
@@ -235,8 +252,8 @@ def main(args):
 
         train_instance_acc = np.mean(mean_correct)
         log_string('Train Instance Accuracy: %f, Train Loss: %f' % (train_instance_acc, loss_in_epoch))
-        # writer.add_scalars('Loss', {"Train": loss_in_epoch}, epoch)
-        # writer.add_scalars('Accuracy', {"Train": train_instance_acc}, epoch)
+        writer.add_scalars('Loss', {"Train": loss_in_epoch}, epoch)
+        writer.add_scalars('Accuracy', {"Train": train_instance_acc}, epoch)
 
         with torch.no_grad():
             instance_acc, class_acc, test_loss_in_epoch = test(classifier.eval(), criterion.eval(), testDataLoader, num_class=num_class)
@@ -250,8 +267,8 @@ def main(args):
             log_string('Test Instance Accuracy: %f, Class Accuracy: %f, Test Loss: %f' % (instance_acc, class_acc, test_loss_in_epoch))
             log_string('Best Instance Accuracy: %f, Class Accuracy: %f' % (best_instance_acc, best_class_acc))
 
-            # writer.add_scalars('Loss', {"Test": test_loss_in_epoch}, epoch)
-            # writer.add_scalars('Accuracy', {"Test": instance_acc}, epoch)
+            writer.add_scalars('Loss', {"Test": test_loss_in_epoch}, epoch)
+            writer.add_scalars('Accuracy', {"Test": instance_acc}, epoch)
 
             if (instance_acc >= best_instance_acc):
                 logger.info('Save model...')
@@ -267,7 +284,7 @@ def main(args):
                 torch.save(state, savepath)
             global_epoch += 1
 
-    # writer.close()
+    writer.close()
     logger.info('End of training...')
 
 
