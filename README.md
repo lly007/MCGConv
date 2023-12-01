@@ -19,7 +19,7 @@ This project propose a new scheme, called Multi-Centroids Graph Convolution (MCG
 This project passed the test in the following environment
 ### Software
 - PyTorch >= 2.1.0
-- PyTorch3D >= 0.7.4 [how to install](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md)
+- PyTorch3D >= 0.7.5 [how to install](https://github.com/facebookresearch/pytorch3d/blob/main/INSTALL.md)
 - NVIDIA CUDA Toolkit >= 12.1
 
 ### Harware
