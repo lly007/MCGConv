@@ -34,7 +34,7 @@ Download alignment **ModelNet** [here](https://shapenet.cs.stanford.edu/media/mo
 
 ### Run
 ```shell
-python train_classification_MCGConv_tb.py --normal --log_dir [your log dir]
+python train_classification_MCGConv_tb.py --use_normals --log_dir [your log dir]
 ```
 
 ## Part Segmentation
