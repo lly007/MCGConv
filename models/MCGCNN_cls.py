@@ -11,11 +11,11 @@ class get_model(nn.Module):
         in_channel = 6 if normal_channel else 3
         self.normal_channel = normal_channel
         # framepoint = torch.tensor([[1.0,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1],[0,0,0]]).cuda()
-        self.mcgconv1 = MCGConv(npoint=512, cin=3, cout=128, radius=0.15, nsample=32, m1=[7,32,1], m2=[1,64,128], v = 4, ball_query=False)
-        self.mcgconv2 = MCGConv(npoint=256, cin=128, cout=256, radius=0.25, nsample=32, m1=[7,32,1], m2=[1,64,256], v = 4, ball_query=False)
-        self.mcgconv3 = MCGConv(npoint=128, cin=256, cout=256, radius=0.4, nsample=32, m1=[7,64,1], m2=[1,128,256], v = 4, ball_query=False)
-        self.mcgconv4 = MCGConv(npoint=32, cin=256, cout=512, radius=0.6, nsample=32, m1=[7,64,1], m2=[1,128,512], v = 4, ball_query=False)
-        self.mcgconv5 = MCGConv(npoint=None, cin=512, cout=1024, radius=10, nsample=32, m1=[7,128,1], m2=[1,256,1024], v = 4, ball_query=False)
+        self.mcgconv1 = MCGConv(npoint=512, cin=3, cout=128, radius=0.15, nsample=32, m1=[7,32,1], m2=[1,64,128], v = 4, ball_query=False, use_normal=normal_channel)
+        self.mcgconv2 = MCGConv(npoint=256, cin=128, cout=256, radius=0.25, nsample=32, m1=[7,32,1], m2=[1,64,256], v = 4, ball_query=False, use_normal=normal_channel)
+        self.mcgconv3 = MCGConv(npoint=128, cin=256, cout=256, radius=0.4, nsample=32, m1=[7,64,1], m2=[1,128,256], v = 4, ball_query=False, use_normal=normal_channel)
+        self.mcgconv4 = MCGConv(npoint=32, cin=256, cout=512, radius=0.6, nsample=32, m1=[7,64,1], m2=[1,128,512], v = 4, ball_query=False, use_normal=normal_channel)
+        self.mcgconv5 = MCGConv(npoint=None, cin=512, cout=1024, radius=10, nsample=32, m1=[7,128,1], m2=[1,256,1024], v = 4, ball_query=False, use_normal=normal_channel)
         self.fc1 = nn.Linear(1024, 512)
         self.bn1 = nn.BatchNorm1d(512)
         self.drop1 = nn.Dropout(0.4)
@@ -29,10 +29,11 @@ class get_model(nn.Module):
         if self.normal_channel:
             norm = xyz[:, 3:, :]
             xyz = xyz[:, :3, :]
+            xyz = xyz.transpose(1, 2)
+            norm = norm.transpose(1, 2)
         else:
             norm = None
-        xyz = xyz.transpose(1, 2)
-        norm = norm.transpose(1, 2)
+            xyz = xyz.transpose(1, 2)
         f1, s1 = self.mcgconv1(xyz, norm)
         f2, s2 = self.mcgconv2(s1, f1)
         f3, s3 = self.mcgconv3(s2, f2)
