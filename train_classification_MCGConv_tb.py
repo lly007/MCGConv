@@ -32,7 +32,7 @@ def parse_args():
     parser = argparse.ArgumentParser('training')
     parser.add_argument('--use_cpu', action='store_true', default=False, help='use cpu mode')
     parser.add_argument('--gpu', type=str, default='0', help='specify gpu device')
-    parser.add_argument('--batch_size', type=int, default=4, help='batch size in training')
+    parser.add_argument('--batch_size', type=int, default=8, help='batch size in training')
     parser.add_argument('--model', default='MCGCNN_cls', help='model name [default: pointnet_cls]')
     parser.add_argument('--num_category', default=40, type=int, choices=[10, 40],  help='training on ModelNet10/40')
     parser.add_argument('--epoch', default=400, type=int, help='number of epoch in training')
@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument('--optimizer', type=str, default='AdamW', help='optimizer for training')
     parser.add_argument('--log_dir', type=str, default=None, help='experiment root')
     parser.add_argument('--decay_rate', type=float, default=1e-4, help='decay rate')
-    parser.add_argument('--use_normals', action='store_true', default=True, help='use normals')
+    parser.add_argument('--use_normals', action='store_true', default=False, help='use normals')
     parser.add_argument('--process_data', action='store_true', default=False, help='save data offline')
     parser.add_argument('--use_uniform_sample', action='store_true', default=False, help='use uniform sampiling')
     return parser.parse_args()
@@ -195,8 +195,9 @@ def main(args):
     best_instance_acc = 0.0
     best_class_acc = 0.0
 
-    scaler = torch.cuda.amp.GradScaler()
-    summary(classifier, input_size=(args.batch_size, 6, 1024))
+    # scaler = torch.cuda.amp.GradScaler()
+    input_channels = 6 if args.use_normals else 3
+    summary(classifier, input_size=(args.batch_size, input_channels, 1024))
 
     '''TRANING'''
     logger.info('Start training...')
